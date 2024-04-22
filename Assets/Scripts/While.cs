@@ -4,62 +4,62 @@ using UnityEngine;
 
 public class While : MonoBehaviour
 {
-    [SerializeField] int animationDuration;
-    float seconds;
-    [SerializeField] Transform objectToMove;
-    [SerializeField] List<Transform> points;
-    [SerializeField] List<Color> colors;
-    int startPointList = 0;
-    int endPointList = 1;
+    [SerializeField] Transform ObjectToMove;
+    [SerializeField] List<Transform> Points;
+    [SerializeField] List<Color> Colors;
+    [SerializeField] AnimationCurve ease;
+    [SerializeField] float AnimationDuration;
+
+    Material material;
+
+    int startPointIndex = 0;
+    int endPointIndex = 1;
+
     void Start()
     {
-        StartCoroutine(Letter());
-        StartCoroutine(Seconds());
-        seconds = 0;
+        material = ObjectToMove.GetComponent<MeshRenderer>().material;
+        StartCoroutine(CountDuration());
     }
-    IEnumerator Letter()
+    IEnumerator CountDuration()
     {
-        int frameCount = 0;
+        float elapsedTime;
 
-        while (frameCount <= animationDuration)
-        {
-            frameCount++;
-            print("a " + frameCount);
-            yield return new WaitForEndOfFrame();
-        }
-    }
-
-    IEnumerator Seconds()
-    {
         while (true)
         {
-            seconds = 0;
+            elapsedTime = 0;
 
-            while (seconds <= animationDuration)
+            while (elapsedTime < AnimationDuration)
             {
-                seconds += Time.deltaTime;
-                objectToMove.position = Vector3.Lerp (points[startPointList].position, points[endPointList].position, seconds / animationDuration);
-                objectToMove.GetComponent<Renderer>().material.color = Color.Lerp(colors[startPointList], colors[endPointList], seconds / animationDuration);
-                yield return new WaitForEndOfFrame();
+                elapsedTime += Time.deltaTime;
+
+                ObjectToMove.position = Vector3.LerpUnclamped(
+                    Points[startPointIndex].position,
+                    Points[endPointIndex].position,
+                    ease.Evaluate(elapsedTime / AnimationDuration)
+                );
+                ObjectToMove.rotation = Quaternion.LerpUnclamped(
+                    Points[startPointIndex].rotation,
+                    Points[endPointIndex].rotation,
+                    ease.Evaluate(elapsedTime / AnimationDuration)
+                );
+                material.color = Color.LerpUnclamped(
+                    Colors[startPointIndex],
+                    Colors[endPointIndex],
+                    ease.Evaluate(elapsedTime / AnimationDuration)
+                );
+
+                yield return null;
             }
 
-            UpdateIndex();
+            UpdatePointIndices();
+
+            yield return null;
         }
     }
 
-    void UpdateIndex()
+    void UpdatePointIndices()
     {
-        startPointList = endPointList;
-        endPointList = (startPointList + 1) % points.Count;
+        startPointIndex = endPointIndex;
+        endPointIndex = (endPointIndex + 1) % Points.Count;
     }
 }
-            /*else
-            {
-                while (seconds <= animationDuration)
-                {
-                    seconds += Time.deltaTime;
-                    transform.position = Vector3.Lerp(pointB.position, pointA.position, seconds / animationDuration);
-                    up = true;
-                    yield return new WaitForEndOfFrame();
-                }
-            }*/

@@ -11,11 +11,24 @@ public class Intro : MonoBehaviour
     [SerializeField] bool rotate = false;
     [SerializeField] Vector3 speedRotation;
     List<GameObject> instantiatedObjects = new List<GameObject>();
+    Coroutine coroutine = null;
 
     void Start()
     {
-        StartCoroutine(InstanciateValuesCoroutine());
+        StartCoroutine(MainLoop());
         StartCoroutine(Rotation());
+    }
+    IEnumerator MainLoop()
+    {
+        while (true)
+        {
+            coroutine = StartCoroutine(InstanciateValuesCoroutine());
+            while (coroutine != null)
+                yield return null;
+            coroutine = StartCoroutine(DestroyObjects());
+            while (coroutine != null)
+                yield return null;
+        }
     }
 
     IEnumerator InstanciateValuesCoroutine()
@@ -46,11 +59,7 @@ public class Intro : MonoBehaviour
                 }
             }
         }
-        for (int i = 0; i < instantiatedObjects.Count; i++)
-        {
-            Destroy(instantiatedObjects[i]);
-        }
-        yield return new WaitForSeconds(timeBetweenPrints);
+        coroutine = null;
     }
 
     IEnumerator Rotation()
@@ -65,6 +74,17 @@ public class Intro : MonoBehaviour
         }
     }
 
+    IEnumerator DestroyObjects()
+    {
+        while (instantiatedObjects.Count > 0)
+        {
+            Destroy(instantiatedObjects[0]);
+            instantiatedObjects.RemoveAt(0);
+            yield return new WaitForSeconds(timeBetweenPrints);
+        }
+        coroutine = null;
+    }
+
     public void InstantiateAt(Vector3 location)
     {
         GameObject instantiated = Instantiate(prefab, transform);
@@ -73,17 +93,16 @@ public class Intro : MonoBehaviour
 
         instantiated.name = prefab.name + " " + instantiatedObjects.Count;
 
+        instantiatedObjects.Add(instantiated);
+        
+        print("Placing Sphere " + instantiated.name + " at " + location);
+        
         instantiated.GetComponent<MeshRenderer>().material.color = new Color(
             Normalize(location.x, -5, 5),
             Normalize(location.y, -5, 5),
             Normalize(location.z, -5, 5)
         );
-
-        instantiatedObjects.Add(instantiated);
-        
-        print("Placing Sphere " + instantiated.name + " at " + location);
     }
-
     float Normalize(float value, float min, float max)
     {
         return (value - min) / (max - min);
